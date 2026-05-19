@@ -35,7 +35,7 @@ To run the baseline 1v1 zero-sum training loop and generate the kinematic metric
 
 ```bash
 # Clone the repository
-git clone [https://github.com/yourusername/marl-market-behavior.git](https://github.com/yourusername/marl-market-behavior.git)
+git clone https://github.com/aiyu221b3/self-play-in-marl-exp.git
 cd marl-market-behavior
 
 # Install dependencies
@@ -52,7 +52,7 @@ If you use this environment or the resulting visualizations in your research, pl
 Code snippet
 @article{ayushi2026marl,
   title={Emergent market behavior through MARL: self-play and decentralized learning in financial systems},
-  author={Ayushi},
+  author={Ayushi Bhattacharya},
   year={2026},
   publisher={GitHub}
 }
