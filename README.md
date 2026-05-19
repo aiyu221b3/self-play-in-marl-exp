@@ -46,9 +46,11 @@ python baseline_1v1.py
 
 # Execute the 2v1 mixed-motive environment
 python multi_agent_2v1.py
-📝 Citation
-If you use this environment or the resulting visualizations in your research, please cite the author:
+```
 
+## 📝 Citation
+If you use this environment or the resulting visualizations in your research, please cite the author:
+```
 Code snippet
 @article{ayushi2026marl,
   title={Emergent market behavior through MARL: self-play and decentralized learning in financial systems},
