@@ -2,10 +2,6 @@
 
 > 🚧 **Work in Progress:** This repository contains the preliminary code and visualization tools for the upcoming survey paper: *Emergent market behavior through MARL: self-play and decentralized learning in financial systems*. The repository is actively being structured for official release.
 
-[![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://python.org)
-[![RL](https://img.shields.io/badge/Domain-Reinforcement_Learning-purple.svg)]()
-[![Game Theory](https://img.shields.io/badge/Subfield-Game_Theory-darkred.svg)]()
-
 This repository implements a lightweight, Tabular Q-Learning environment designed to isolate, observe, and mathematically prove the core challenges and emergent phenomena of Multi-Agent Reinforcement Learning (MARL) within simulated financial markets.
 
 ## 🔬 Core Experiments
