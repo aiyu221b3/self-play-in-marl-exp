@@ -59,5 +59,5 @@ Code snippet
 ```
 
 ## 🛠️ Acknowledgments
-* The core MARL environment and Game Theory logic were developed independently, and criticism from **Claude**.
+* The core MARL environment and Game Theory logic were developed independently, and through criticism from **Claude**.
 * **Google Gemini** was utilized to assist with refactoring the Matplotlib scripts to achieve publication-ready visualization aesthetics.
