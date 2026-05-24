@@ -30,7 +30,7 @@ vision-limited pursuit.
 
 ![Non-Stationarity](single/marl_non_stationarity.png)
 
-Full breakdown: [single/EXPLAINED.md](single-form/EXPLAINED.md)
+Full breakdown: [single/EXPLAINED.md](single/EXPLAINED.md)
 
 ---
 
@@ -47,7 +47,7 @@ Nash equilibrium through board division.
 
 ![Decoy Effect](multi/marl_multi_winrates.png)
 
-Full breakdown: [multi/EXPLAINED.md](multi-form/EXPLAINED.md)
+Full breakdown: [multi/EXPLAINED.md](multi/EXPLAINED.md)
 
 ---
 
