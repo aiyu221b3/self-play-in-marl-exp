@@ -9,25 +9,31 @@ def smooth(data, window=5):
     return pd.Series(data).rolling(window, min_periods=1).mean().tolist()
 
 class MarketEnv:
+    """
+      We've got an 8x8 grid simulating a financial market.
+      Trader (trd) is going to try to reach position (0,0), while
+      Market Marker (mm) is going to intercept.
+    """
     def __init__(self, grid_size=8, m_steps=50):
         self.grid_size = grid_size
         self.m_steps = m_steps
         self.MOVE_LOOKUP = ((-1,0), (1,0), (0,-1), (0,1), (0,0))
         self.reset()
 
-    def reset(self):
+    def reset(self): # resetting in each episode
         self.trd_pos = (7, 7)
-        self.mm_pos = (2, 2)
+        self.mm_pos = (2, 2) #initial trd pos is (7,7) mm is (2,2)
         self.step_count = 0
         self.done = False
         return self.trd_pos, self.mm_pos
 
-    def step(self, trd_action, mm_action):
+    def step(self, trd_action, mm_action): # pos is determined by fn move
+        # move is a fn of prior pos and action taken from it
         self.trd_pos = self.move(self.trd_pos, trd_action)
         self.mm_pos = self.move(self.mm_pos, mm_action)
-        self.step_count += 1
-
-        detected = self.trd_pos == self.mm_pos
+        self.step_count += 1 
+        
+        detected = self.trd_pos == self.mm_pos 
         accumulated = self.trd_pos == (0, 0)
         timeout = self.step_count >= self.m_steps
 
@@ -44,13 +50,14 @@ class MarketEnv:
             mm_reward = -1
             self.done = True
         else:
+            # dist penalty for trader creates urgency
             dist_penalty = (self.trd_pos[0] + self.trd_pos[1]) * 0.01
             trd_reward = -0.1 - dist_penalty
             mm_reward = -0.1
 
         return (self.trd_pos, self.mm_pos), (trd_reward, mm_reward), self.done
 
-    def move(self, pos, action):
+    def move(self, pos, action): 
         dx, dy = self.MOVE_LOOKUP[action]
         n_x = max(0, min(self.grid_size - 1, pos[0] + dx))
         n_y = max(0, min(self.grid_size - 1, pos[1] + dy))
@@ -64,14 +71,14 @@ class QAgent:
         self.epsilon = epsilon_start
         self.epsilon_end = epsilon_end
         self.epsilon_decay = epsilon_decay
-        self.q_table = defaultdict(lambda: np.zeros(5))
+        self.q_table = defaultdict(lambda: np.zeros(5)) # create ze dict
 
     def get_action(self, state, explore=True):
-        if explore and random.random() < self.epsilon:
+        if explore and random.random() < self.epsilon: 
             return random.randint(0, 4)
         q_values = self.q_table[state]
         return np.random.choice(np.flatnonzero(q_values == q_values.max()))
-
+        # bellman's eqn :>
     def update(self, state, action, reward, next_state):
         current_q = self.q_table[state][action]
         best_next_q = np.max(self.q_table[next_state])
@@ -119,7 +126,7 @@ def train(eps=3000, log_inte=50):
                 late_actions[ta] += 1
 
             (new_trd_pos, new_mm_pos), (tr, mr), done = env.step(ta, ma)
-
+            # infinity norm~
             dist = max(abs(new_trd_pos[0] - new_mm_pos[0]), abs(new_trd_pos[1] - new_mm_pos[1]))
             if dist <= 3:
                 last_known_trd = new_trd_pos
@@ -159,7 +166,7 @@ def train(eps=3000, log_inte=50):
 
         if ep > 0 and ep % 500 == 0:
           eval_mm_win_c = 0
-          eval_env = MarketEnv()  
+          eval_env = MarketEnv()
           for _ in range(50):
               e_trd_pos, e_mm_pos = eval_env.reset()
               e_last_known = e_trd_pos
@@ -205,9 +212,9 @@ def plot_results(trd_wins, mm_wins, trd_rw_log, mm_rw_log, log_inte, eps, eval_e
     COLOR_MM = "#ff006e"
     COLOR_EVAL = "#8338ec"
     COLOR_EARLY = "#d9d9d9"
-    
+
     episodes_axis = list(range(log_inte, eps + 1, log_inte))
-    
+
     s_trd_wins = smooth(trd_wins, window=10)
     s_mm_wins = smooth(mm_wins, window=10)
     s_trd_rw = smooth(trd_rw_log, window=10)
@@ -250,10 +257,10 @@ def plot_results(trd_wins, mm_wins, trd_rw_log, mm_rw_log, log_inte, eps, eval_e
     total_late = sum(late_actions.values()) or 1
     early_vals = [(early_actions[i] / total_early) * 100 for i in range(5)]
     late_vals = [(late_actions[i] / total_late) * 100 for i in range(5)]
-    
+
     x = np.arange(len(labels))
     width = 0.35
-    
+
     plt.bar(x - width/2, early_vals, width, label='Early Training', color=COLOR_EARLY)
     plt.bar(x + width/2, late_vals, width, label='Late Training', color=COLOR_TRD)
     plt.title("Emergent Behavior: Trader Action Distribution", pad=15)
@@ -299,7 +306,7 @@ def plot_advanced_metrics(env, trd, mm, ep_lengths, log_inte=50):
         t_pos, m_pos = env.reset()
         env.done = False
         t_state, m_state = (t_pos, m_pos), (m_pos, t_pos)
-        
+
         while not env.done:
             trd_footprint[t_pos[1], t_pos[0]] += 1
             mm_footprint[m_pos[1], m_pos[0]] += 1
@@ -339,3 +346,13 @@ if __name__ == "__main__":
 
     print("Generating advanced spatial and kinematic metrics...")
     plot_advanced_metrics(env, trd, mm, ep_lengths, log_inte=log_int)
+
+    print("Downloading all publication figures...")
+    from google.colab import files
+    files.download("marl_non_stationarity.pdf")
+    files.download("marl_reward_evolution.pdf")
+    files.download("marl_self_play.pdf")
+    files.download("marl_action_distribution.pdf")
+    files.download("marl_episode_duration.pdf")
+    files.download("marl_spatial_heatmap.pdf")
+    print("Done.")
