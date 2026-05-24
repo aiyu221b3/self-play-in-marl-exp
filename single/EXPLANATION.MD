@@ -105,14 +105,7 @@ a persistent negative reward, unable to recover.
 
 ![Reward Evolution Dynamics](marl_reward_evolution.png)
 
-**Territorial strategy:** The spatial heatmaps show that 
-both agents developed implicit territories without being 
-told to. The trader learned a diagonal corridor toward 
-$(0,0)$. The maker learned to cluster at the intersection 
-of the trader's most frequent positions. Neither was given 
-a map. The territories emerged from thousands of Q-table 
-updates reinforcing whatever movement patterns produced 
-better outcomes.
+**Territorial strategy:** The spatial heatmaps show that both agents developed implicit territories without being told to. Rather than a straight diagonal, the trader learned an edge-hugging route, creating a massive, high-density staging area at coordinate (2,6) before making its final sprint to the target. The maker learned to aggressively patrol the boundary of this territory, clustering heavily at (2,5) to intercept the trader's most frequent breakout point. Neither was given a map; these standoff territories emerged purely from thousands of Q-table updates.
 
 ![Spatial Heatmap](marl_spatial_heatmap.png)
 
