@@ -1,0 +1,226 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import random
+from collections import defaultdict
+import pandas as pd
+import matplotlib.colors as mcolors
+
+def smooth(data, window=5):
+    return pd.Series(data).rolling(window, min_periods=1).mean().tolist()
+
+class MarketEnvMulti:
+    def __init__(self, grid_size=5, m_steps=50):
+        self.grid_size = grid_size
+        self.m_steps = m_steps
+        self.MOVE_LOOKUP = ((-1,0), (1,0), (0,-1), (0,1), (0,0))
+        self.reset()
+
+    def reset(self):
+        self.trd1_pos = (4, 4)
+        self.trd2_pos = (0, 4)
+        self.mm_pos = (2, 2)
+        self.step_count = 0
+        self.done = False
+        return self.trd1_pos, self.trd2_pos, self.mm_pos
+
+    def step(self, t1_act, t2_act, mm_act):
+        self.trd1_pos = self.move(self.trd1_pos, t1_act)
+        self.trd2_pos = self.move(self.trd2_pos, t2_act)
+        self.mm_pos = self.move(self.mm_pos, mm_act)
+        self.step_count += 1
+
+        caught_1 = self.trd1_pos == self.mm_pos
+        caught_2 = self.trd2_pos == self.mm_pos
+        win_1 = self.trd1_pos == (0, 0)
+        win_2 = self.trd2_pos == (0, 0)
+        timeout = self.step_count >= self.m_steps
+
+        t1_reward = -0.1
+        t2_reward = -0.1
+        mm_reward = -0.1
+
+        if caught_1 or caught_2:
+            if caught_1: t1_reward = -10
+            if caught_2: t2_reward = -10
+            mm_reward = 10
+            self.done = True
+        elif win_1 or win_2:
+            if win_1: t1_reward = 10
+            if win_2: t2_reward = 10
+            mm_reward = -10
+            self.done = True
+        elif timeout:
+            t1_reward, t2_reward, mm_reward = -1, -1, -1
+            self.done = True
+
+        return (self.trd1_pos, self.trd2_pos, self.mm_pos), (t1_reward, t2_reward, mm_reward), self.done
+
+    def move(self, pos, action):
+        dx, dy = self.MOVE_LOOKUP[action]
+        n_x = max(0, min(self.grid_size - 1, pos[0] + dx))
+        n_y = max(0, min(self.grid_size - 1, pos[1] + dy))
+        return (n_x, n_y)
+
+class QAgent:
+    def __init__(self, name, alpha=0.1, gamma=0.95, epsilon_start=1.0, epsilon_end=0.05, epsilon_decay=0.999):
+        self.name = name
+        self.alpha = alpha
+        self.gamma = gamma
+        self.epsilon = epsilon_start
+        self.epsilon_end = epsilon_end
+        self.epsilon_decay = epsilon_decay
+        self.q_table = defaultdict(lambda: np.zeros(5))
+
+    def get_action(self, state, explore=True):
+        if explore and random.random() < self.epsilon:
+            return random.randint(0, 4)
+        q_values = self.q_table[state]
+        return np.random.choice(np.flatnonzero(q_values == q_values.max()))
+
+    def update(self, state, action, reward, next_state):
+        current_q = self.q_table[state][action]
+        best_next_q = np.max(self.q_table[next_state])
+        td_error = reward + self.gamma * best_next_q - current_q
+        self.q_table[state][action] += self.alpha * td_error
+
+    def decay_epsilon(self):
+        self.epsilon = max(self.epsilon_end, self.epsilon * self.epsilon_decay)
+
+def train_multi(eps=10000, log_inte=100):
+    env = MarketEnvMulti()
+    
+    trd1 = QAgent("FastTrader", alpha=0.5, epsilon_decay=0.9995)
+    trd2 = QAgent("SlowTrader", alpha=0.05, epsilon_decay=0.9995)
+    mm = QAgent("MarketMaker", alpha=0.1, epsilon_decay=0.9995)
+
+    t1_wins, t2_wins, mm_wins = [], [], []
+    t1_win_c, t2_win_c, mm_win_c = 0, 0, 0
+
+    for ep in range(eps):
+        p1, p2, pm = env.reset()
+        
+        s1 = (p1, p2, pm)
+        s2 = (p2, p1, pm)
+        sm = (pm, p1, p2)
+
+        while not env.done:
+            a1 = trd1.get_action(s1)
+            a2 = trd2.get_action(s2)
+            am = mm.get_action(sm)
+
+            (n_p1, n_p2, n_pm), (r1, r2, rm), done = env.step(a1, a2, am)
+
+            n_s1 = (n_p1, n_p2, n_pm)
+            n_s2 = (n_p2, n_p1, n_pm)
+            n_sm = (n_pm, n_p1, n_p2)
+
+            trd1.update(s1, a1, r1, n_s1)
+            trd2.update(s2, a2, r2, n_s2)
+            mm.update(sm, am, rm, n_sm)
+
+            s1, s2, sm = n_s1, n_s2, n_sm
+
+        if env.trd1_pos == (0,0): t1_win_c += 1
+        elif env.trd2_pos == (0,0): t2_win_c += 1
+        elif env.mm_pos in (env.trd1_pos, env.trd2_pos): mm_win_c += 1
+
+        trd1.decay_epsilon()
+        trd2.decay_epsilon()
+        mm.decay_epsilon()
+
+        if (ep + 1) % log_inte == 0:
+            t1_wins.append(t1_win_c / log_inte * 100)
+            t2_wins.append(t2_win_c / log_inte * 100)
+            mm_wins.append(mm_win_c / log_inte * 100)
+            t1_win_c, t2_win_c, mm_win_c = 0, 0, 0
+
+    return env, trd1, trd2, mm, t1_wins, t2_wins, mm_wins, log_inte, eps
+
+def plot_multi_results(env, trd1, trd2, mm, t1_wins, t2_wins, mm_wins, log_inte, eps):
+    plt.rcParams.update({
+        "font.family": "sans-serif",
+        "font.size": 12,
+        "axes.titlesize": 14,
+        "axes.labelsize": 12,
+        "legend.fontsize": 11,
+        "axes.grid": True,
+        "grid.alpha": 0.5,
+        "grid.color": "#eaeaea",
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+    })
+
+    COLOR_T1 = "#3a86ff"
+    COLOR_T2 = "#00b4d8"
+    COLOR_MM = "#ff006e"
+
+    episodes_axis = list(range(log_inte, eps + 1, log_inte))
+    s_t1 = smooth(t1_wins, window=10)
+    s_t2 = smooth(t2_wins, window=10)
+    s_mm = smooth(mm_wins, window=10)
+
+    plt.figure(figsize=(9, 5))
+    plt.plot(episodes_axis, s_t1, label=r"Fast Trader ($\alpha=0.5$)", color=COLOR_T1, linewidth=2)
+    plt.plot(episodes_axis, s_t2, label=r"Slow Trader ($\alpha=0.05$)", color=COLOR_T2, linewidth=2)
+    plt.plot(episodes_axis, s_mm, label="Market Maker", color=COLOR_MM, linewidth=2)
+    plt.title("Mixed-Motive Dynamics: The Emergent Decoy Effect", pad=15)
+    plt.xlabel("Training Episodes")
+    plt.ylabel("Win Rate (%)")
+    plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.18), ncol=3, frameon=False)
+    plt.tight_layout()
+    plt.savefig("marl_multi_winrates.pdf", format='pdf', bbox_inches='tight')
+    plt.close()
+
+    f1 = np.zeros((env.grid_size, env.grid_size))
+    f2 = np.zeros((env.grid_size, env.grid_size))
+    fm = np.zeros((env.grid_size, env.grid_size))
+
+    for _ in range(100):
+        p1, p2, pm = env.reset()
+        s1, s2, sm = (p1, p2, pm), (p2, p1, pm), (pm, p1, p2)
+        
+        while not env.done:
+            f1[p1[1], p1[0]] += 1
+            f2[p2[1], p2[0]] += 1
+            fm[pm[1], pm[0]] += 1
+            
+            a1 = trd1.get_action(s1, explore=False)
+            a2 = trd2.get_action(s2, explore=False)
+            am = mm.get_action(sm, explore=False)
+            
+            (p1, p2, pm), _, _ = env.step(a1, a2, am)
+            s1, s2, sm = (p1, p2, pm), (p2, p1, pm), (pm, p1, p2)
+
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+    
+    cm_t1 = mcolors.LinearSegmentedColormap.from_list("t1_map", ["white", COLOR_T1])
+    cm_t2 = mcolors.LinearSegmentedColormap.from_list("t2_map", ["white", COLOR_T2])
+    cm_mm = mcolors.LinearSegmentedColormap.from_list("mm_map", ["white", COLOR_MM])
+
+    axes[0].imshow(f1, cmap=cm_t1, origin='upper')
+    axes[0].set_title("Fast Trader Trajectory")
+    axes[0].grid(False)
+
+    axes[1].imshow(f2, cmap=cm_t2, origin='upper')
+    axes[1].set_title("Slow Trader Trajectory")
+    axes[1].grid(False)
+
+    axes[2].imshow(fm, cmap=cm_mm, origin='upper')
+    axes[2].set_title("Market Maker Patrol")
+    axes[2].grid(False)
+
+    for ax in axes:
+        ax.set_xticks(range(env.grid_size))
+        ax.set_yticks(range(env.grid_size))
+
+    plt.tight_layout()
+    plt.savefig("marl_multi_heatmaps.pdf", format='pdf', bbox_inches='tight')
+    plt.close()
+
+if __name__ == "__main__":
+    print("Training 2v1 Mixed-Motive Market...")
+    env, trd1, trd2, mm, t1w, t2w, mmw, log_i, eps = train_multi(eps=10000, log_inte=100)
+    
+    print("Generating Decoy Effect Visualizations...")
+    plot_multi_results(env, trd1, trd2, mm, t1w, t2w, mmw, log_i, eps)
+   
