@@ -1,65 +1,102 @@
-# Emergent Market Behavior through MARL 📈
 
-> 🚧 **Work in Progress:** This repository contains the preliminary code and visualization tools for the upcoming survey paper: *Emergent market behavior through MARL: self-play and decentralized learning in financial systems*. The repository is actively being structured for official release.
+# Emergent Market Behavior through MARL
 
-This repository implements a lightweight, Tabular Q-Learning environment designed to isolate, observe, and mathematically prove the core challenges and emergent phenomena of Multi-Agent Reinforcement Learning (MARL) within simulated financial markets.
+This repository implements two lightweight Tabular Q-Learning 
+environments designed to isolate and observe emergent phenomena 
+in Multi-Agent Reinforcement Learning (MARL) within simulated 
+financial markets. Deep neural architectures are deliberately 
+avoided to maintain mathematical clarity and focus purely on 
+game-theoretic dynamics.
 
-## 🔬 Core Experiments
+This is a Level 1 implementation. Future iterations will scale 
+to deep MARL architectures (MADDPG, MAPPO) and continuous state 
+spaces modeling realistic limit order book dynamics.
 
-The codebase is split into two foundational environments, avoiding deep neural architectures to maintain mathematical clarity and focus purely on Game Theory dynamics.
+---
+
+## Core Experiments
 
 ### 1. The Zero-Sum Baseline (1v1)
-A pursuit-evasion game mapping to **Imperfect Information** market conditions.
-* **Informed Trader:** Attempts to reach the target accumulation zone while minimizing distance penalties.
-* **Market Maker:** Attempts to intercept the trader with a limited vision radius (Partial Observability).
-* **Key Findings:** Demonstrates non-stationarity, reward oscillation, and emergent deception (the trader learning to skew action distributions toward "Stay" to mask intent).
+
+A pursuit-evasion game modeling imperfect information market 
+conditions between an informed trader and a market maker.
+
+The trader begins with a mixed strategy before converging to a dominant one; the market maker, lacking a fixed target, remains perpetually reactive. Thus never fully stable, never fully defeated.
+
+Key findings: non-stationarity in co-evolving policies, 
+asymmetric convergence, and emergent cost-of-carry minimization 
+where the trader learns high-speed routing over stealth under 
+vision-limited pursuit.
+
+![Non-Stationarity](single/marl_non_stationarity.png)
+
+Full breakdown: [single/EXPLAINED.md](single-form/EXPLAINED.md)
+
+---
 
 ### 2. The Mixed-Motive Bottleneck (2v1)
-A complex environment introducing **Spurious Coordination** and the **Free-Rider Problem** without programmed teamwork.
-* **Fast Trader ($\alpha = 0.5$):** Adapts rapidly, learning to act as an intentional decoy.
-* **Slow Trader ($\alpha = 0.05$):** Acts as market noise, stumbling into the target zone while the Market Maker is distracted.
-* **Key Findings:** Proves how local, self-interested reward updates can breed global, cooperative market manipulation. 
 
-## 📊 Visualizations
+Two informed traders with asymmetric learning rates competing 
+against a single market maker on a 5x5 grid.
 
-The training scripts automatically generate publication-ready, high-resolution PDFs tracking:
-* Non-Stationarity & Rolling Win Rates
-* Spatial Occupancy Heatmaps (Agent Footprints)
-* Action Distribution Evolution (Emergent Deception)
-* Episode Efficiency / Duration Convergence
-* Self-Play Evaluation Curves
+The slow trader starts winning the moment it discovers the market maker will preferably chase the fast trader's dominant strategy, and the fast trader only starts winning once it learns to abandon that same strategy.
 
-## 🚀 Quick Start
+Key findings: emergent decoy effect without programmed 
+coordination, spatial territory divergence, and implicit 
+Nash equilibrium through board division.
 
-To run the baseline 1v1 zero-sum training loop and generate the kinematic metrics:
+![Decoy Effect](multi/marl_multi_winrates.png)
+
+Full breakdown: [multi/EXPLAINED.md](multi-form/EXPLAINED.md)
+
+---
+
+## Visualizations
+
+Training scripts generate the following:
+
+- Non-stationarity and rolling win rates
+- Spatial occupancy heatmaps
+- Action distribution evolution
+- Episode duration convergence
+- Self-play evaluation curves
+
+---
+
+## Quick Start
 
 ```bash
-# Clone the repository
 git clone https://github.com/aiyu221b3/self-play-in-marl-exp.git
-cd marl-market-behavior
-
-# Install dependencies
+cd self-play-in-marl-exp
 pip install numpy matplotlib pandas
-
-# Execute the 1v1 baseline
-python baseline_1v1.py
-
-# Execute the 2v1 mixed-motive environment
-python multi_agent_2v1.py
+python single-form/baseline_1v1.py
+python multi-form/multi_agent_2v1.py
 ```
 
-## 📝 Citation
-If you use this environment or the resulting visualizations in your research, please cite the author:
+---
+
+## Citation
+
 ```
-Code snippet
-@article{ayushi2026marl,
-  title={Emergent market behavior through MARL: self-play and decentralized learning in financial systems},
+@misc{bhattacharya2026marl,
+  title={Emergent Market Behavior through MARL},
   author={Ayushi Bhattacharya},
   year={2026},
-  publisher={GitHub}
+  url={https://github.com/aiyu221b3/self-play-in-marl-exp}
 }
 ```
 
-## 🛠️ Acknowledgments
-* The core MARL environment and Game Theory logic were developed independently, and through criticism from **Claude**.
-* **Google Gemini** was utilized to assist with refactoring the Matplotlib scripts to achieve publication-ready visualization aesthetics.
+---
+
+## Acknowledgments
+
+Core MARL environment, game-theoretic design, state 
+representations, and reward structures developed independently 
+with iterative feedback from **Claude (Anthropic)**.
+
+Matplotlib visualization scripts refactored with assistance 
+from **Google Gemini**.
+
+
+---
+
