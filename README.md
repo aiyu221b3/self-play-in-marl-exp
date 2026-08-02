@@ -86,17 +86,5 @@ python multi-form/multi_agent_2v1.py
 }
 ```
 
----
 
-## Acknowledgments
-
-Core MARL environment, game-theoretic design, state 
-representations, and reward structures developed independently 
-with iterative feedback from **Claude (Anthropic)**.
-
-Matplotlib visualization scripts refactored with assistance 
-from **Google Gemini**.
-
-
----
 
