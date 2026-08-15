@@ -1,90 +1,79 @@
+# Self-Play MARL
 
-# Emergent Market Behavior through MARL
+A lightweight 2v1 partially observable gridworld with two Traders and one Market Maker. Agents move on randomized reward landscapes, retain last-seen opponent information, and are trained with independent PPO or centralized-critic MAPPO.
 
-This repository implements two lightweight Tabular Q-Learning 
-environments designed to isolate and observe emergent phenomena 
-in Multi-Agent Reinforcement Learning (MARL) within simulated 
-financial markets. Deep neural architectures are deliberately 
-avoided to maintain mathematical clarity and focus purely on 
-game-theoretic dynamics.
+## What we did
 
-This is a Level 1 implementation. Future iterations will scale 
-to deep MARL architectures (MADDPG, MAPPO) and continuous state 
-spaces modeling realistic limit order book dynamics.
+- Built a randomized 16×16 reward landscape with five discrete movement actions.
+- Added partial observability through a 3×3 local terrain patch, normalized position, and last-seen opponent position.
+- Trained two Traders and one Market Maker with independent PPO.
+- Trained the same agents with MAPPO using a centralized 39D critic while keeping execution decentralized.
+- Evaluated rewards, trajectories, visitation densities, action behavior, and robustness to reward distortion.
+- Exported plots, logs, and model checkpoints as reproducible artifacts.
 
----
+## Results
 
-## Core Experiments
+| Comparison | PPO | MAPPO |
+|---|---:|---:|
+| Trader 1 | 0.410 | 0.515 |
+| Trader 2 | 0.445 | 0.481 |
+| Market Maker | -0.022 | 0.050 |
 
-### 1. The Zero-Sum Baseline (1v1)
+The clearest effect is agent-specific: MAPPO improves all three agents, with the Market Maker moving from slightly negative to positive mean reward.
 
-A pursuit-evasion game modeling imperfect information market 
-conditions between an informed trader and a market maker.
+[Reward comparison](ppo_vs_mappo_readable.png) ·
+[Training curves](ppo_training.png) ·
+[MAPPO training](mappo_training.png)
 
-The trader begins with a mixed strategy before converging to a dominant one; the market maker, lacking a fixed target, remains perpetually reactive. Thus never fully stable, never fully defeated.
+[Trajectories](agent_trajectories.png) ·
+[Visit densities](marl_multi_heatmaps.png) ·
+[Reward distortion](distortion.png)
 
-Key findings: non-stationarity in co-evolving policies, 
-asymmetric convergence, and emergent cost-of-carry minimization 
-where the trader learns high-speed routing over stealth under 
-vision-limited pursuit.
+## Architecture
 
-![Non-Stationarity](single/marl_non_stationarity.png)
+Each agent receives a 13D observation:
 
-Full breakdown: [single/EXPLANATION.md](single/EXPLANATION.md)
+`2D position + 9D local terrain patch + 2D last-seen opponent position`
 
----
+The three decentralized actors output probabilities over five actions. MAPPO additionally uses a centralized critic receiving the concatenated 39D observations.
 
-### 2. The Mixed-Motive Bottleneck (2v1)
+![Architecture](architecture.png)
 
-Two informed traders with asymmetric learning rates competing 
-against a single market maker on a 5x5 grid.
+## Structure
 
-The slow trader starts winning the moment it discovers the market maker will preferably chase the fast trader's dominant strategy, and the fast trader only starts winning once it learns to abandon that same strategy.
+```text
+.
+├── README.md
+├── requirements.txt
+├── run.py
+└── src/
+    ├── __init__.py
+    ├── config.py
+    ├── environment.py
+    ├── agents.py
+    ├── training.py
+    ├── evaluation.py
+    └── visualization.py
+```
 
-Key findings: emergent decoy effect without programmed 
-coordination, spatial territory divergence, and implicit 
-Nash equilibrium through board division.
+- `environment.py` — landscapes, observations, movement, rewards, capture, and last-seen memory.
+- `agents.py` — actor networks and centralized MAPPO critic.
+- `training.py` — rollouts, GAE, PPO, and MAPPO updates.
+- `evaluation.py` — evaluation trajectories and visitation statistics.
+- `visualization.py` — plots and result artifacts.
+- `run.py` — experiment entry point and checkpoint export.
 
-![Decoy Effect](multi/marl_multi_winrates.png)
-
-Full breakdown: [multi/EXPLANATION.md](multi/EXPLANATION.md)
-
----
-
-## Visualizations
-
-Training scripts generate the following:
-
-- Non-stationarity and rolling win rates
-- Spatial occupancy heatmaps
-- Action distribution evolution
-- Episode duration convergence
-- Self-play evaluation curves
-
----
-
-## Quick Start
+## Run
 
 ```bash
-git clone https://github.com/aiyu221b3/self-play-in-marl-exp.git
-cd self-play-in-marl-exp
-pip install numpy matplotlib pandas
-python single-form/baseline_1v1.py
-python multi-form/multi_agent_2v1.py
+pip install -r requirements.txt
+python run.py
 ```
 
----
+For a small smoke run:
 
-## Citation
-
-```
-@misc{bhattacharya2026marl,
-  title={Emergent Market Behavior through MARL},
-  author={Ayushi Bhattacharya},
-  year={2026},
-  url={https://github.com/aiyu221b3/self-play-in-marl-exp}
-}
+```bash
+python run.py --steps 10 --batch 64 --horizon 32
 ```
 
-
-
+Outputs are written to `results/`.
