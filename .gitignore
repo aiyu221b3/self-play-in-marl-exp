@@ -45,5 +45,6 @@ mlruns/
 # Generated archives
 *.zip
 
-# Local results
-results/
+# Local-only results
+results/tmp/
+results/checkpoints/
