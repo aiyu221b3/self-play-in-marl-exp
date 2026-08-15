@@ -68,11 +68,18 @@ decoy/
 │   └── trader_2_density.png
 │
 └── results/
-    ├── rewards.csv
-    ├── training.csv
-    ├── distortion.csv
-    ├── ppo.pt
-    └── mappo.pt
+    ├── ppo_mappo_final.csv
+    ├── ppo_training_history.csv
+    ├── mappo_training_history.csv
+    ├── ppo_distortion.csv
+    ├── mappo_distortion.csv
+    ├── observation_spec.csv
+    ├── ppo_history.npy
+    ├── mappo_history.npy
+    ├── mappo_losses.npy
+    ├── trader1_density.npy
+    ├── trader2_density.npy
+    └── market_maker_density.npy
 ```
 
 - `environment.py` — landscapes, observations, movement, rewards, capture, and last-seen memory.
