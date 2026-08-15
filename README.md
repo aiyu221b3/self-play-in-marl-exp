@@ -29,6 +29,7 @@ Creds for image: ChatGPT.
 | Trader 2 | 0.445 | 0.481 |
 | Market Maker | -0.022 | 0.050 |
 
+Trader 1 and Trader 2 share identical architecture and training but do not converge to symmetric outcomes under MAPPO near the training distribution, Trader 1 reaches +0.33 mean reward while Trader 2 sits at -0.35. This tracks the divergence visible in the MAPPO training curve (Trader 2 spikes then drops relative to Trader 1 mid-training). Whether this reflects real emergent specialization or seed/checkpoint variance hasn't been checked.
 The clearest effect is agent-specific: MAPPO improves all three agents, with the Market Maker moving from slightly negative to positive mean reward.
 
 ![Reward comparison](assets/ppo_vs_mappo.png) 
@@ -38,6 +39,20 @@ The clearest effect is agent-specific: MAPPO improves all three agents, with the
 ![Trajectories](assets/agent_trajectories.png) 
 Density graphs:
 ![Market Maker](assets/market_maker_density.png) ![Trader 1](assets/trader_1_density.png) ![Trader 2](assets/trader_2_density.png)
+
+### Robustness to Landscape Distortion
+
+Both algorithms were evaluated across landscape distortion levels (0 to 0.8) blending the training landscape with increasing noise to test how mean reward holds up away from the training distribution.
+
+| Distortion | PPO Trader 1 | PPO Trader 2 | PPO MM | MAPPO Trader 1 | MAPPO Trader 2 | MAPPO MM |
+|---:|---:|---:|---:|---:|---:|---:|
+| 0.0 | 0.152 | 0.416 | 0.139 | 0.328 | -0.351 | 1.015 |
+| 0.8 | 0.228 | 0.481 | 0.169 | 0.549 | 0.365 | 0.256 |
+
+Full sweep in `results/ppo_distortion.csv` and `results/mappo_distortion.csv`.
+
+MAPPO's Market Maker advantage is concentrated near the training distribution (reward ~1.0, capture ~24% at distortion 0) and degrades under landscape shift (reward ~0.26, capture ~15% at distortion 0.8), while both traders improve over the same range. Independent PPO stays comparatively flat for all three agents across the same sweep the centralized critic's benefit for the Market Maker doesn't generalize as well as it performs on-distribution.
+
 ## Structure
 
 ```text
