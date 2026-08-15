@@ -20,7 +20,7 @@ Each agent receives a 13D observation:
 The three decentralized actors output probabilities over five actions. MAPPO additionally uses a centralized critic receiving the concatenated 39D observations.
 
 ![Architecture](architecture.png)
-
+Creds for image: ChatGPT.
 ## Results
 
 | Comparison | PPO | MAPPO |
@@ -31,13 +31,11 @@ The three decentralized actors output probabilities over five actions. MAPPO add
 
 The clearest effect is agent-specific: MAPPO improves all three agents, with the Market Maker moving from slightly negative to positive mean reward.
 
-[Reward comparison](assets/ppo_vs_mappo.png) 
-[Training curves](assets/ppo_training.png) 
-[MAPPO training](assets/mappo_training.png)
+![Reward comparison](assets/ppo_vs_mappo.png) 
+![Training curves](assets/ppo_training.png) 
+![MAPPO training](assets/mappo_training.png)
 
-[Trajectories](assets/agent_trajectories.png) 
-[Visit densities](assets/marl_multi_heatmaps.png) 
-[Reward distortion](assets/distortion.png)
+![Trajectories](assets/agent_trajectories.png) 
 
 ## Structure
 
@@ -58,13 +56,15 @@ decoy/
 │   └── visualization.py
 │
 ├── assets/
-│   ├── architecture.png
-│   ├── overview.png
-│   ├── trajectories.png
-│   ├── visit_density.png
-│   ├── reward_curves.png
-│   ├── reward_comparison.png
-│   └── reward_distortion.png
+│   ├── agent_trajectories.png
+│   ├── mappo_training.png
+│   ├── market_maker_density.png
+│   ├── ppo_training.png
+│   ├── ppo_vs_mappo.png
+│   ├── reward_landscapes.png
+│   ├── terrain_trajectory.png
+│   ├──trader_1_density.png
+│   └── trader_2_density.png
 │
 └── results/
     ├── rewards.csv
