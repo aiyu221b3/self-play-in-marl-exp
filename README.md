@@ -40,7 +40,7 @@ The clearest effect is agent-specific: MAPPO improves all three agents, with the
 ## Structure
 
 ```text
-decoy/
+self-play/
 ├── README.md
 ├── requirements.txt
 ├── LICENSE
