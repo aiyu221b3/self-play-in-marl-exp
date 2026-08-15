@@ -36,7 +36,8 @@ The clearest effect is agent-specific: MAPPO improves all three agents, with the
 ![MAPPO training](assets/mappo_training.png)
 
 ![Trajectories](assets/agent_trajectories.png) 
-
+Density graphs:
+![Market Maker](assets/market_maker_density.png) ![Trader 1](assets/trader_1_density.png) ![Trader 2](assets/trader_2_density.png)
 ## Structure
 
 ```text
