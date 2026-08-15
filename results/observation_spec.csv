@@ -1,0 +1,4 @@
+agent,observation_dim,observation
+trader1,13,position + terrain patch + last-seen maker
+trader2,13,position + terrain patch + last-seen maker
+market_maker,13,position + terrain patch + last-seen trader
