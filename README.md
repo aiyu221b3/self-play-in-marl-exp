@@ -45,6 +45,7 @@ decoy/
 ├── requirements.txt
 ├── LICENSE
 ├── .gitignore
+├── architecture.png
 │
 ├── src/
 │   ├── __init__.py
