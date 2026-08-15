@@ -11,24 +11,6 @@ A lightweight 2v1 partially observable gridworld with two Traders and one Market
 - Evaluated rewards, trajectories, visitation densities, action behavior, and robustness to reward distortion.
 - Exported plots, logs, and model checkpoints as reproducible artifacts.
 
-## Results
-
-| Comparison | PPO | MAPPO |
-|---|---:|---:|
-| Trader 1 | 0.410 | 0.515 |
-| Trader 2 | 0.445 | 0.481 |
-| Market Maker | -0.022 | 0.050 |
-
-The clearest effect is agent-specific: MAPPO improves all three agents, with the Market Maker moving from slightly negative to positive mean reward.
-
-[Reward comparison](ppo_vs_mappo_readable.png) ·
-[Training curves](ppo_training.png) ·
-[MAPPO training](mappo_training.png)
-
-[Trajectories](agent_trajectories.png) ·
-[Visit densities](marl_multi_heatmaps.png) ·
-[Reward distortion](distortion.png)
-
 ## Architecture
 
 Each agent receives a 13D observation:
@@ -39,21 +21,57 @@ The three decentralized actors output probabilities over five actions. MAPPO add
 
 ![Architecture](architecture.png)
 
+## Results
+
+| Comparison | PPO | MAPPO |
+|---|---:|---:|
+| Trader 1 | 0.410 | 0.515 |
+| Trader 2 | 0.445 | 0.481 |
+| Market Maker | -0.022 | 0.050 |
+
+The clearest effect is agent-specific: MAPPO improves all three agents, with the Market Maker moving from slightly negative to positive mean reward.
+
+[Reward comparison](assets/ppo_vs_mappo.png) 
+[Training curves](assets/ppo_training.png) 
+[MAPPO training](assets/mappo_training.png)
+
+[Trajectories](assets/agent_trajectories.png) 
+[Visit densities](assets/marl_multi_heatmaps.png) 
+[Reward distortion](assets/distortion.png)
+
 ## Structure
 
 ```text
-.
+decoy/
 ├── README.md
 ├── requirements.txt
-├── run.py
-└── src/
-    ├── __init__.py
-    ├── config.py
-    ├── environment.py
-    ├── agents.py
-    ├── training.py
-    ├── evaluation.py
-    └── visualization.py
+├── LICENSE
+├── .gitignore
+│
+├── src/
+│   ├── __init__.py
+│   ├── config.py
+│   ├── environment.py
+│   ├── agents.py
+│   ├── training.py
+│   ├── evaluation.py
+│   └── visualization.py
+│
+├── assets/
+│   ├── architecture.png
+│   ├── overview.png
+│   ├── trajectories.png
+│   ├── visit_density.png
+│   ├── reward_curves.png
+│   ├── reward_comparison.png
+│   └── reward_distortion.png
+│
+└── results/
+    ├── rewards.csv
+    ├── training.csv
+    ├── distortion.csv
+    ├── ppo.pt
+    └── mappo.pt
 ```
 
 - `environment.py` — landscapes, observations, movement, rewards, capture, and last-seen memory.
