@@ -66,20 +66,17 @@ $$
 
 The PPO policy update uses the clipped probability ratio:
 
+$$ 
+L_{\text{clip}}^i = -\mathbb{E}_t \left[ \min \left( \rho_t^i \hat{A}_t^i, \mathrm{clip}(\rho_t^i, 1-\eta, 1+\eta) \hat{A}_t^i \right) \right]
 $$
-L_{\text{clip}}^i
-=
--\mathbb{E}_t\left[
-\min\left(
-\rho_t^i\hat A_t^i,
-\mathrm{clip}(\rho_t^i,1-\eta,1+\eta)\hat A_t^i
-\right)
-\right],
-\quad
-\rho_t^i=
-\frac{\pi_i(a_t^i\mid o_t^i)}
-{\pi_{i,\text{old}}(a_t^i\mid o_t^i)}.
+
+where:
 $$
+\rho_t^i = \frac{\pi_i(a_t^i \mid o_t^i)}{\pi_{i,\text{old}}(a_t^i \mid o_t^i)}
+$$
+
+The implementation uses $\eta = 0.2$, an entropy coefficient of $0.01$ and a value-loss coefficient of $0.5$.
+
 
 The implementation uses $\eta=0.2$, an entropy coefficient of $0.01$ and a value-loss coefficient of $0.5$.
 
