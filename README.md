@@ -11,7 +11,7 @@ Each episode runs on a randomized $16 \times 16$ reward landscape. The landscape
 $$
 R_{\text{map}}(x,y)
 =
-\operatorname{Norm}\left((1-\delta)Z(x,y)+\delta\,\epsilon(x,y)\right),
+\mathrm{Norm}\left((1-\delta)Z(x,y)+\delta\,\epsilon(x,y)\right),
 \qquad \epsilon \sim \mathcal{U}(0,1).
 $$
 
@@ -21,7 +21,7 @@ $$
 o_i^t =
 \left[
 \frac{p_i^t}{15},
-\; \operatorname{Patch}_{3\times3}(Z,p_i^t),
+\; \mathrm{Patch}_{3\times3}(Z,p_i^t),
 \; \frac{\ell_i^t}{15}
 \right]
 \in \mathbb{R}^{13}.
@@ -32,7 +32,7 @@ Here, $p_i^t$ is the agent's current grid position and $\ell_i^t$ is its last-se
 All agents share the same five-action space:
 
 $$
-\mathcal{A}=\{\uparrow,\downarrow,\leftarrow,\rightarrow,\text{stay}\}.
+\mathcal{A}=\{\uparrow,\downarrow,\leftarrow,\rightarrow,\mathrm{stay}\}.
 $$
 
 Trader rewards are the reward-landscape value at the new position minus a step cost of $0.05$. A successful capture gives the Market Maker $+10$ and the caught Trader $-10$. Episodes terminate when the Market Maker catches either Trader.
@@ -42,7 +42,7 @@ Trader rewards are the reward-landscape value at the new position minus a step c
 Each agent has its own actor network. Given its local observation, the actor produces a categorical distribution over the five actions:
 
 $$
-\pi_i(a\mid o_i)=\operatorname{softmax}(f_i(o_i)).
+\pi_i(a\mid o_i)=\mathrm{softmax}(f_i(o_i)).
 $$
 
 The PPO baseline trains the three agents independently, with a separate value estimate for each agent. MAPPO keeps the actors decentralized but concatenates their observations for a shared critic:
@@ -72,7 +72,7 @@ L_{\text{clip}}^i
 -\mathbb{E}_t\left[
 \min\left(
 \rho_t^i\hat A_t^i,
-\operatorname{clip}(\rho_t^i,1-\eta,1+\eta)\hat A_t^i
+\mathrm{clip}(\rho_t^i,1-\eta,1+\eta)\hat A_t^i
 \right)
 \right],
 \quad
@@ -81,7 +81,7 @@ L_{\text{clip}}^i
 {\pi_{i,\text{old}}(a_t^i\mid o_t^i)}.
 $$
 
-The implementation uses $\eta=0.2$, an entropy coefficient of (0.01), and a value-loss coefficient of (0.5).
+The implementation uses $\eta=0.2$, an entropy coefficient of $0.01$ and a value-loss coefficient of $0.5$.
 
 ## Results
 
