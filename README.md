@@ -8,14 +8,18 @@ A lightweight 2v1 partially observable gridworld with two Traders and one Market
 
 Each episode runs on a randomized $16 \times 16$ reward landscape. The landscape is sampled from five terrain patterns, normalized, and blended with uniform noise:
 
+with uniform noise:
+
 $$
-R_{\text{map}}(x,y)
-=
-\mathrm{Norm}\left((1-\delta)Z(x,y)+\delta\,\epsilon(x,y)\right),
-\qquad \epsilon \sim \mathcal{U}(0,1).
+R_{\text{map}}(x,y) = \mathrm{Norm}\left((1-\delta)Z(x,y)+\delta,\epsilon(x,y)\right)
 $$
 
-An agent does not receive the full map. Its observation combines its normalized position, a $3 \times 3$ local terrain patch, and the normalized last-seen position of its opponent:
+where:
+$$
+\epsilon \sim \mathcal{U}(0,1)
+$$
+
+An agent does not receive the full map. Its observation combines its normalized position, a $3 \times 3$ local terrain patch, and the norm seen position of its opponent:
 
 $$
 o_i^t =
