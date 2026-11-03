@@ -168,15 +168,30 @@ The main implementation lives in `src/`: `environment.py` defines the landscapes
 
 ## Run
 
+Install the dependencies:
+
 ```bash
 pip install -r requirements.txt
-python run.py
 ```
 
-For a smaller smoke run:
+Training is exposed through `src.training`. To train both methods with the default configuration and generate the plots and CSV/NumPy outputs:
 
-```bash
-python run.py --steps 10 --batch 64 --horizon 32
+```python
+from src.training import train_ppo, train_mappo
+from src.visualization import run
+
+ppo_agents, ppo_history = train_ppo()
+mappo_agents, critic, mappo_history, mappo_losses = train_mappo()
+
+run(ppo_agents, ppo_history, mappo_agents, mappo_history, mappo_losses)
 ```
 
-Outputs are written to `results/`.
+For a smaller smoke test, reduce the number of updates, parallel environments, and rollout horizon:
+
+```python
+from src.training import train_ppo
+
+agents, history = train_ppo(n=2, b=8, t=16)
+```
+
+The default training configuration is 300 updates, 512 parallel environments, and a 64-step rollout. Generated plots and evaluation data are written to `results/`.
