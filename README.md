@@ -71,9 +71,11 @@ L_{\text{clip}}^i = -\mathbb{E}_t \left[ \min \left( \rho_t^i \hat{A}_t^i, \math
 $$
 
 where:
+
 $$
 \rho_t^i = \frac{\pi_i(a_t^i \mid o_t^i)}{\pi_{i,\text{old}}(a_t^i \mid o_t^i)}
 $$
+
 
 The implementation uses $\eta = 0.2$, an entropy coefficient of $0.01$ and a value-loss coefficient of $0.5$.
 
