@@ -16,7 +16,7 @@ $$
 
 where:
 $$
-\epsilon \sim \mathcal{U}(0,1)
+\epsilon \ \sim \ \mathcal{U}(0,1)
 $$
 
 An agent does not receive the full map. Its observation combines its normalized position, a $3 \times 3$ local terrain patch, and the norm seen position of its opponent:
