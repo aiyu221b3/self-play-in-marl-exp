@@ -1,77 +1,144 @@
 # Self-Play MARL
 
-A lightweight 2v1 partially observable gridworld with two Traders and one Market Maker. Agents move on randomized reward landscapes, retain last-seen opponent information, and are trained with independent PPO or centralized-critic MAPPO.
+A lightweight 2v1 partially observable gridworld with two Traders and one Market Maker. All three agents move on randomized reward landscapes, but each only sees a local patch of the terrain and the last position at which it observed an opponent. I use the environment to compare independent PPO against MAPPO with a centralized critic and decentralized execution.
 
-## What we did
+![Self-Play MARL architecture](architecture.png)
 
-- Built a randomized 16×16 reward landscape with five discrete movement actions.
-- Added partial observability through a 3×3 local terrain patch, normalized position, and last-seen opponent position.
-- Trained two Traders and one Market Maker with independent PPO.
-- Trained the same agents with MAPPO using a centralized 39D critic while keeping execution decentralized.
-- Evaluated rewards, trajectories, visitation densities, action behavior, and robustness to reward distortion.
-- Exported plots, logs, and model checkpoints as reproducible artifacts.
+## Environment and observations
 
-## Architecture
+Each episode runs on a randomized (16 \times 16) reward landscape. The landscape is sampled from five terrain patterns, normalized, and blended with uniform noise:
 
-Each agent receives a 13D observation:
+\[
+R_{\text{map}}(x,y)
+=
+\operatorname{Norm}\left((1-\delta)Z(x,y)+\delta\,\epsilon(x,y)\right),
+\qquad \epsilon \sim \mathcal{U}(0,1).
+\]
 
-`2D position + 9D local terrain patch + 2D last-seen opponent position`
+An agent does not receive the full map. Its observation combines its normalized position, a (3 \times 3) local terrain patch, and the normalized last-seen position of its opponent:
 
-The three decentralized actors output probabilities over five actions. MAPPO additionally uses a centralized critic receiving the concatenated 39D observations.
+\[
+o_i^t =
+\left[
+\frac{p_i^t}{15},
+\; \operatorname{Patch}_{3\times3}(Z,p_i^t),
+\; \frac{\ell_i^t}{15}
+\right]
+\in \mathbb{R}^{13}.
+\]
 
-![Architecture](architecture.png)
-Creds for image: ChatGPT.
+Here, (p_i^t\) is the agent's current grid position and \(\ell_i^t\) is its last-seen opponent position. The patch contributes 9 values, while the two positions contribute 2 each.
+
+All agents share the same five-action space:
+
+\[
+\mathcal{A}=\{\uparrow,\downarrow,\leftarrow,\rightarrow,\text{stay}\}.
+\]
+
+Trader rewards are the reward-landscape value at the new position minus a step cost of (0.05). A successful capture gives the Market Maker (+10) and the caught Trader (-10). Episodes terminate when the Market Maker catches either Trader.
+
+## Learning setup
+
+Each agent has its own actor network. Given its local observation, the actor produces a categorical distribution over the five actions:
+
+\[
+\pi_i(a\mid o_i)=\operatorname{softmax}(f_i(o_i)).
+\]
+
+The PPO baseline trains the three agents independently, with a separate value estimate for each agent. MAPPO keeps the actors decentralized but concatenates their observations for a shared critic:
+
+\[
+s^t=[o_1^t,o_2^t,o_3^t]\in\mathbb{R}^{39},
+\qquad
+V_\phi(s^t)\in\mathbb{R}^{3}.
+\]
+
+The critic returns one value estimate per agent. During execution, each actor still selects actions from its own 13D observation. The centralized critic is used for training, not for choosing actions.
+
+Both implementations use generalized advantage estimation. With discount factor \(\gamma=0.99\) and GAE parameter \(\lambda=0.95\):
+
+\[
+\begin{aligned}
+\delta_t^i &= r_t^i+\gamma(1-d_t)V_i(s_{t+1})-V_i(s_t),\\
+\hat A_t^i &= \delta_t^i+\gamma\lambda(1-d_t)\hat A_{t+1}^i.
+\end{aligned}
+\]
+
+The PPO policy update uses the clipped probability ratio:
+
+\[
+L_{\text{clip}}^i
+=
+-\mathbb{E}_t\left[
+\min\left(
+\rho_t^i\hat A_t^i,
+\operatorname{clip}(\rho_t^i,1-\eta,1+\eta)\hat A_t^i
+\right)
+\right],
+\quad
+\rho_t^i=
+\frac{\pi_i(a_t^i\mid o_t^i)}
+{\pi_{i,\text{old}}(a_t^i\mid o_t^i)}.
+\]
+
+The implementation uses \(\eta=0.2\), an entropy coefficient of (0.01), and a value-loss coefficient of (0.5).
+
 ## Results
 
-| Comparison | PPO | MAPPO |
-|---|---:|---:|
+The table below reports the final mean rewards from the saved PPO/MAPPO comparison:
+
+| Agent | Independent PPO | MAPPO |
+|:--|--:|--:|
 | Trader 1 | 0.410 | 0.515 |
 | Trader 2 | 0.445 | 0.481 |
 | Market Maker | -0.022 | 0.050 |
 
-Trader 1 and Trader 2 share identical architecture and training but do not converge to symmetric outcomes under MAPPO near the training distribution, Trader 1 reaches +0.33 mean reward while Trader 2 sits at -0.35. This tracks the divergence visible in the MAPPO training curve (Trader 2 spikes then drops relative to Trader 1 mid-training). Whether this reflects real emergent specialization or seed/checkpoint variance hasn't been checked.
-The clearest effect is agent-specific: MAPPO improves all three agents, with the Market Maker moving from slightly negative to positive mean reward.
+MAPPO improves the reported mean reward for all three agents in this comparison. The difference between the two Traders is also worth looking at: despite sharing the same architecture and training procedure, they do not end up with symmetric outcomes. I have not established whether that gap comes from specialization or seed and checkpoint variance, so I would not call it emergent specialization yet.
 
-![Reward comparison](assets/ppo_vs_mappo.png) 
-![Training curves](assets/ppo_training.png) 
-![MAPPO training](assets/mappo_training.png)
+![PPO and MAPPO reward comparison](assets/ppo_vs_mappo.png)
 
-![Trajectories](assets/agent_trajectories.png) 
-Density graphs:
-![Market Maker](assets/market_maker_density.png) ![Trader 1](assets/trader_1_density.png) ![Trader 2](assets/trader_2_density.png)
+The training curves show how the three agents evolve under each learning setup.
 
-### Robustness to Landscape Distortion
+| Independent PPO | MAPPO |
+|:--:|:--:|
+| ![Independent PPO training curves](assets/ppo_training.png) | ![MAPPO training curves](assets/mappo_training.png) |
 
-Both algorithms were evaluated across landscape distortion levels (0 to 0.8) blending the training landscape with increasing noise to test how mean reward holds up away from the training distribution.
+The trajectories and visitation densities provide a spatial view of the learned behaviour.
 
-| Distortion | PPO Trader 1 | PPO Trader 2 | PPO MM | MAPPO Trader 1 | MAPPO Trader 2 | MAPPO MM |
+![Agent trajectories](assets/agent_trajectories.png)
+
+| Market Maker | Trader 1 | Trader 2 |
+|:--:|:--:|:--:|
+| ![Market Maker visitation density](assets/market_maker_density.png) | ![Trader 1 visitation density](assets/trader_1_density.png) | ![Trader 2 visitation density](assets/trader_2_density.png) |
+
+### Robustness to landscape distortion
+
+I also evaluated both methods on landscapes with increasing noise, controlled by the distortion parameter \(\delta\). This blends the sampled training landscape with uniform noise and tests how the learned policies behave under landscape shift.
+
+| Distortion | PPO T1 | PPO T2 | PPO MM | MAPPO T1 | MAPPO T2 | MAPPO MM |
 |---:|---:|---:|---:|---:|---:|---:|
 | 0.0 | 0.152 | 0.416 | 0.139 | 0.328 | -0.351 | 1.015 |
 | 0.8 | 0.228 | 0.481 | 0.169 | 0.549 | 0.365 | 0.256 |
 
-Full sweep in `results/ppo_distortion.csv` and `results/mappo_distortion.csv`.
+The Market Maker's MAPPO advantage is strongest near the training distribution, where its mean reward is about 1.0 and capture rate is about 24%. At distortion 0.8, these fall to about 0.26 and 15%. The Trader rewards move in the opposite direction over the same range. Independent PPO is comparatively stable across the distortion sweep.
 
-MAPPO's Market Maker advantage is concentrated near the training distribution (reward ~1.0, capture ~24% at distortion 0) and degrades under landscape shift (reward ~0.26, capture ~15% at distortion 0.8), while both traders improve over the same range. Independent PPO stays comparatively flat for all three agents across the same sweep the centralized critic's benefit for the Market Maker doesn't generalize as well as it performs on-distribution.
+The full results are in `results/ppo_distortion.csv` and `results/mappo_distortion.csv`.
 
-## Structure
+## Repository layout
 
 ```text
-self-play/
+.
 ├── README.md
+├── architecture.png
 ├── requirements.txt
 ├── LICENSE
-├── .gitignore
-├── architecture.png
-│
 ├── src/
-│   ├── __init__.py
 │   ├── config.py
 │   ├── environment.py
 │   ├── agents.py
 │   ├── training.py
 │   ├── evaluation.py
 │   └── visualization.py
-│
 ├── assets/
 │   ├── agent_trajectories.png
 │   ├── mappo_training.png
@@ -80,9 +147,8 @@ self-play/
 │   ├── ppo_vs_mappo.png
 │   ├── reward_landscapes.png
 │   ├── terrain_trajectory.png
-│   ├──trader_1_density.png
+│   ├── trader_1_density.png
 │   └── trader_2_density.png
-│
 └── results/
     ├── ppo_mappo_final.csv
     ├── ppo_training_history.csv
@@ -98,12 +164,7 @@ self-play/
     └── market_maker_density.npy
 ```
 
-- `environment.py` — landscapes, observations, movement, rewards, capture, and last-seen memory.
-- `agents.py` — actor networks and centralized MAPPO critic.
-- `training.py` — rollouts, GAE, PPO, and MAPPO updates.
-- `evaluation.py` — evaluation trajectories and visitation statistics.
-- `visualization.py` — plots and result artifacts.
-- `run.py` — experiment entry point and checkpoint export.
+The main implementation lives in `src/`: `environment.py` defines the landscapes, observations, movement, rewards, capture, and last-seen memory; `agents.py` contains the actor networks and centralized critic; and `training.py` implements rollouts, GAE, PPO, and MAPPO updates. Evaluation and plotting are handled by `evaluation.py` and `visualization.py`.
 
 ## Run
 
@@ -112,7 +173,7 @@ pip install -r requirements.txt
 python run.py
 ```
 
-For a small smoke run:
+For a smaller smoke run:
 
 ```bash
 python run.py --steps 10 --batch 64 --horizon 32
