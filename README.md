@@ -15,9 +15,11 @@ R_{\text{map}}(x,y) = \mathrm{Norm}\left((1-\delta)Z(x,y)+\delta,\epsilon(x,y)\r
 $$
 
 where:
+
 $$
 \epsilon \sim \mathrm{Uniform}(0,1)
 $$
+
 
 An agent does not receive the full map. Its observation combines its normalized position, a $3 \times 3$ local terrain patch, and the norm seen position of its opponent:
 
