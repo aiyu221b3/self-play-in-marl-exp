@@ -8,16 +8,16 @@ A lightweight 2v1 partially observable gridworld with two Traders and one Market
 
 Each episode runs on a randomized $16 \times 16$ reward landscape. The landscape is sampled from five terrain patterns, normalized, and blended with uniform noise:
 
-$
+$$
 R_{\text{map}}(x,y)
 =
 \operatorname{Norm}\left((1-\delta)Z(x,y)+\delta\,\epsilon(x,y)\right),
 \qquad \epsilon \sim \mathcal{U}(0,1).
-$
+$$
 
-An agent does not receive the full map. Its observation combines its normalized position, a (3 \times 3) local terrain patch, and the normalized last-seen position of its opponent:
+An agent does not receive the full map. Its observation combines its normalized position, a $3 \times 3$ local terrain patch, and the normalized last-seen position of its opponent:
 
-$
+$$
 o_i^t =
 \left[
 \frac{p_i^t}{15},
@@ -25,15 +25,15 @@ o_i^t =
 \; \frac{\ell_i^t}{15}
 \right]
 \in \mathbb{R}^{13}.
-$
+$$
 
 Here, $p_i^t$ is the agent's current grid position and $\ell_i^t$ is its last-seen opponent position. The patch contributes 9 values, while the two positions contribute 2 each.
 
 All agents share the same five-action space:
 
-$
+$$
 \mathcal{A}=\{\uparrow,\downarrow,\leftarrow,\rightarrow,\text{stay}\}.
-$
+$$
 
 Trader rewards are the reward-landscape value at the new position minus a step cost of $0.05$. A successful capture gives the Market Maker $+10$ and the caught Trader $-10$. Episodes terminate when the Market Maker catches either Trader.
 
@@ -41,32 +41,32 @@ Trader rewards are the reward-landscape value at the new position minus a step c
 
 Each agent has its own actor network. Given its local observation, the actor produces a categorical distribution over the five actions:
 
-$
+$$
 \pi_i(a\mid o_i)=\operatorname{softmax}(f_i(o_i)).
-$
+$$
 
 The PPO baseline trains the three agents independently, with a separate value estimate for each agent. MAPPO keeps the actors decentralized but concatenates their observations for a shared critic:
 
-$
+$$
 s^t=[o_1^t,o_2^t,o_3^t]\in\mathbb{R}^{39},
 \qquad
 V_\phi(s^t)\in\mathbb{R}^{3}.
-$
+$$
 
 The critic returns one value estimate per agent. During execution, each actor still selects actions from its own 13D observation. The centralized critic is used for training, not for choosing actions.
 
 Both implementations use generalized advantage estimation. With discount factor $\gamma=0.99$ and GAE parameter $\lambda=0.95$:
 
-$
+$$
 \begin{aligned}
 \delta_t^i &= r_t^i+\gamma(1-d_t)V_i(s_{t+1})-V_i(s_t),\\
 \hat A_t^i &= \delta_t^i+\gamma\lambda(1-d_t)\hat A_{t+1}^i.
 \end{aligned}
-$
+$$
 
 The PPO policy update uses the clipped probability ratio:
 
-$
+$$
 L_{\text{clip}}^i
 =
 -\mathbb{E}_t\left[
@@ -79,7 +79,7 @@ L_{\text{clip}}^i
 \rho_t^i=
 \frac{\pi_i(a_t^i\mid o_t^i)}
 {\pi_{i,\text{old}}(a_t^i\mid o_t^i)}.
-$
+$$
 
 The implementation uses $\eta=0.2$, an entropy coefficient of (0.01), and a value-loss coefficient of (0.5).
 
